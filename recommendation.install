@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * Implementation of hook_schema().
+ */
+function recommendation_schema() {
+  $schema['recommendation'] = array(
+    'description' => 'Product recommendations.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for a recommendation.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that created the recommendation entity.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'date' => array(
+        'description' => 'The Unix timestamp for when the recommendation was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'product_id' => array(
+        'description' => 'The {commerce_product}.product_id of the recommended product.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'foreign keys' => array(
+      'recommended_product' => array(
+        'table' => 'commerce_product',
+        'columns' => array('product_id' => 'product_id'),
+      ),
+      'recommended_by' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}

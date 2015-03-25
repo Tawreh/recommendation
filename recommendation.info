@@ -1,0 +1,7 @@
+name = Recommendations
+description = "Recommendations based on your purchases."
+package = Commerce
+core = 7.x
+
+; Module includes
+files[] = includes/recommendation.info.inc

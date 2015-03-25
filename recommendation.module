@@ -1,0 +1,118 @@
+<?php
+
+/**
+ * Implementation of hook_views_api().
+ */
+function recommendation_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'recommendation') . '/includes/views',
+  );
+}
+
+/**
+ * Implementation of hook_flush_caches().
+ */
+function recommendation_flush_caches() {
+  $field = field_info_field('recommendation_price');
+
+  if (!$field) {
+    commerce_price_create_instance('recommendation_price', 'recommendation', 'recommendation', t('Product price'));
+  }
+}
+
+/**
+ * Implementation of hook_entity_info().
+ */
+function recommendation_entity_info() {
+  $return = array(
+    'recommendation' => array(
+      'label' => t('Recommendation'),
+      'module' => 'recommendation',
+      'base table' => 'recommendation',
+      'fieldable' => TRUE,
+      'bundles' => array(
+        'recommendation' => array('label' => 'Recommendation'),
+      ),
+      'entity keys' => array(
+        'id' => 'id',
+      ),
+      'entity class' => 'Entity',
+      'controller class' => 'EntityAPIController',
+      'views controller class' => 'EntityDefaultViewsController',
+    ),
+  );
+
+  return $return;
+}
+
+/**
+ * Implementation of hook_field_formatter_info().
+ */
+function recommendations_field_formatter_info() {
+  return array(
+    'price_rounded' => array(
+      'label' => t('Price (rounded)'),
+      'field types' => array('commerce_price'),
+    ),
+    'price_plain' => array(
+      'label' => t('Price (plain)'),
+      'field types' => array('commerce_price'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_field_formatter_view().
+ */
+function recommendations_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  $settings = $display['settings'];
+
+  foreach ($items as $delta => $item) {
+    switch ($display['type']) {
+      case 'price_rounded':
+        // Price rounded is going to display the amount as a price with currency,
+        // e.g. £9.99, $1.25.
+        $amount = commerce_currency_amount_to_decimal($item['amount'], $item['currency_code']);
+        $price = commerce_currency_round(abs($amount), $item['currency_code']);
+        $item['amount'] = commerce_currency_amount_to_decimal($price, $item['currency_code']);
+
+        $element[$delta] = array(
+          '#markup' => commerce_currency_format($price, $item['currency_code']),
+        );
+        break;
+
+      case 'price_plain':
+        // Price plain will just show the amount as plaintext, e.g. 9.99, 1.25.
+        $element[$delta] = array(
+          '#markup' => commerce_currency_amount_to_decimal($item['amount']. $item['currency_code']),
+        );
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  return $element;
+}
+
+/**
+ * Callback for getting recommendation properties.
+ * @see recommendation_entity_property_info().
+ */
+function recommendation_get_properties($recommendation, array $options, $name) {
+  switch ($name) {
+    case 'time_ago':
+      $datetime = new DateTime();
+      $datetime->setTimestamp($recommendation->date);
+
+      $now = new DateTime();
+      $interval = $datetime->diff($now);
+
+      return t('@time hours ago', array('@time' => $interval->format('%h')));
+
+      break;
+  }
+}
